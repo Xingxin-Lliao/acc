@@ -1,0 +1,66 @@
+trigger:
+- main
+
+stages:
+- stage: Build
+  jobs:
+  - job: J1
+    pool:
+      vmImage: ubuntu-22.04
+    variables:
+      MODULE_NAME: acc
+      MODULE_VERSION: 1.0.0
+    steps:
+    - script: |
+        cd ./modules/$(MODULE_NAME)
+        dotnet publish --os linux --arch x64 /t:PublishContainer
+      displayName: 'Build Docker Image'
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'ChickenFarmConnection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az acr login --name chickenfarmmardrid
+          docker tag $(MODULE_NAME) chickenfarmmardrid.azurecr.io/$(MODULE_NAME):$(MODULE_VERSION)
+          docker push chickenfarmmardrid.azurecr.io/$(MODULE_NAME):$(MODULE_VERSION)
+      displayName: 'Login and Push Image'
+
+- stage: Release
+  jobs:
+  - job: J2
+    pool:
+      vmImage: ubuntu-22.04
+    steps:
+    - script: |
+        # install python 3.9
+        sudo apt update
+        sudo apt install software-properties-common -y
+        sudo add-apt-repository ppa:deadsnakes/ppa -y
+        sudo apt install python3.9 python3.9-distutils -y
+        # install pip
+        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+        python3.9 get-pip.py
+        # install iotedgedev
+        python3.9 -m pip install -U iotedgedev pyOpenSSL==22.0.0 urllib3==1.22 requests
+      displayName: 'Install iotedgedev and dependencies'
+
+    - task: AzureIoTEdge@2
+      inputs:
+        action: 'Generate deployment manifest'
+        templateFilePath: 'deployment.template.json'
+        defaultPlatform: 'amd64'
+        deploymentManifestOutputPath: '$(System.DefaultWorkingDirectory)/config/deployment.json'
+        validateGeneratedDeploymentManifest: 'false'
+
+    - task: AzureIoTEdge@2
+      inputs:
+        action: 'Deploy to IoT Edge devices'
+        deploymentFilePath: '$(System.DefaultWorkingDirectory)/config/deployment.json'
+        azureSubscription: 'ChickenFarmConnection'
+        iothubname: 'ChickenFarmMadrid'
+        deploymentid: '$(System.TeamProject)-devops-deployment'
+        priority: '0'
+        deviceOption: 'Single Device'
+        deviceId: 'acc'
