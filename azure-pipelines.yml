@@ -9,7 +9,7 @@ stages:
       vmImage: ubuntu-22.04
     variables:
       MODULE_NAME: acc
-      MODULE_VERSION: 1.0.0
+      MODULE_VERSION: 0.0.1-amd64
       CONTAINER_REGISTRY: chickenfarmmardrid.azurecr.io
     steps:
     - script: |
