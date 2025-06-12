@@ -63,7 +63,7 @@
             "status": "running",
             "restartPolicy": "always",
             "settings": {
-              "image": "${CONTAINER_REGISTRY_ADDRESS}/${MODULE_NAME}:${MODULE_VERSION}",
+              "image": "chickenfarmmardrid.azurecr.io/acc:0.0.1-amd64",
               "createOptions": {}
             }
           },
