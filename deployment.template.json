@@ -63,7 +63,7 @@
             "status": "running",
             "restartPolicy": "always",
             "settings": {
-              "image": "${CONTAINER_REGISTRY_ADDRESS}/${MODULE_NAME}:${MODULE_VERSION}",
+              "image": "$CONTAINER_REGISTRY_ADDRESS/$MODULE_NAME:$MODULE_VERSION",
               "createOptions": {}
             }
           },
